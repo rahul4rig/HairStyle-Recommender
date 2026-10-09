@@ -1,0 +1,1214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hairstyle AI Studio &amp; API Lab — Single-File Edition</title>
+    <meta
+      name="description"
+      content="Single-file interactive hairstyle recommendation engine and 30-minute hands-on API workshop demonstrating Address, Action, Key, Package & Reply."
+    />
+    <meta property="og:title" content="Hairstyle AI Studio &amp; API Lab" />
+    <meta
+      property="og:description"
+      content="Single-file interactive hairstyle recommendation engine and 30-minute hands-on API workshop."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind Play CDN so this single index.html works standalone anywhere -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Fraunces"', "Georgia", "serif"],
+              sans: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
+              mono: ['"IBM Plex Mono"', "monospace"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+        background-color: #f8fafc;
+        color: #0f172a;
+        -webkit-font-smoothing: antialiased;
+      }
+      .font-display {
+        font-family: "Fraunces", Georgia, serif;
+      }
+      .font-mono {
+        font-family: "IBM Plex Mono", monospace;
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
+    <!-- TOP HEADER -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3.5">
+      <div class="max-w-[1360px] mx-auto flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <span class="text-xl font-semibold tracking-tight font-display text-slate-900">
+            Atelier Groq
+          </span>
+          <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600">
+            Single-File index.html
+          </span>
+        </div>
+
+        <!-- 1-Click Actions -->
+        <div class="flex items-center gap-2.5">
+          <button
+            type="button"
+            onclick="downloadSingleHtmlFile()"
+            class="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            ⬇ Download Single index.html
+          </button>
+          <button
+            type="button"
+            onclick="resetDemo()"
+            class="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onclick="runApiCall()"
+            id="topRunBtn"
+            class="px-4 py-2 text-xs font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            ▶ 1-Click Run [FIND MY STYLE]
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- GROQ API KEY BAR + LIVE PIPELINE STATUS -->
+    <div class="bg-white border-b border-slate-200 px-6 py-3">
+      <div class="max-w-[1360px] mx-auto space-y-3">
+        <!-- Pipeline Flow -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-semibold text-slate-900">Flow:</span>
+            <span id="stage1" class="font-mono text-slate-700">1. Hairstyle UI</span>
+            <span class="text-slate-400">→</span>
+            <span id="stage2" class="font-mono text-slate-700">2. POST /api/suggestions</span>
+            <span class="text-slate-400">→</span>
+            <span id="stage3" class="font-mono text-emerald-700 font-semibold">3. Groq (openai/gpt-oss-20b)</span>
+            <span class="text-slate-400">→</span>
+            <span id="stage4" class="font-mono text-slate-700">4. JSON Response → UI</span>
+          </div>
+
+          <div class="flex items-center gap-3 font-mono">
+            <span id="topStatusBadge" class="text-slate-500 font-semibold">
+              Reply: ○ AWAITING REQUEST
+            </span>
+            <span class="text-slate-300">·</span>
+            <span id="topLatency" class="text-slate-500">Latency: —</span>
+          </div>
+        </div>
+
+        <!-- Copy-Paste Groq API Key Bar -->
+        <div class="pt-2.5 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="font-mono font-semibold text-slate-900 bg-amber-50 border border-amber-200 text-amber-900 px-2 py-0.5 rounded">
+              🔑 GROQ_API_KEY
+            </span>
+            <span class="text-slate-600">
+              Manually copy-paste your Groq key (<code class="font-mono text-slate-900">gsk_...</code>) below:
+            </span>
+          </div>
+
+          <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full md:w-auto">
+            <div class="relative flex-1 sm:w-80">
+              <input
+                id="groqKeyInput"
+                type="password"
+                placeholder="Paste gsk_xxxxxxxxxxxxxxxxx here..."
+                oninput="handleKeyInputChange()"
+                class="w-full pl-3 pr-14 py-1.5 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-slate-900"
+              />
+              <button
+                type="button"
+                onclick="toggleKeyVisibility()"
+                id="toggleKeyBtn"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-500 hover:text-slate-900 cursor-pointer"
+              >
+                Show
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onclick="saveGroqKey()"
+              class="px-3.5 py-1.5 text-xs font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors whitespace-nowrap cursor-pointer"
+            >
+              Save Key
+            </button>
+
+            <button
+              type="button"
+              onclick="clearGroqKey()"
+              class="px-2.5 py-1.5 text-xs font-semibold bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
+            >
+              Clear
+            </button>
+
+            <span id="keyStatusText" class="text-xs font-mono text-slate-500 whitespace-nowrap">
+              No custom key (Using Server Default)
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="flex-1 max-w-[1360px] w-full mx-auto px-6 py-8 space-y-8">
+      <!-- 5-PART API CALL SEGMENTATION STRIP: Address, Action, Key, Package & Reply -->
+      <section class="space-y-2">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-mono uppercase tracking-wider text-slate-500 font-semibold">
+            API Call Segmented into 5 Parts: Address · Action · Key · Package · Reply
+          </h2>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-500">Output Mode:</span>
+            <button
+              type="button"
+              id="modeStructuredBtn"
+              onclick="setFormatMode('structured')"
+              class="px-2.5 py-1 rounded font-mono text-xs bg-slate-900 text-white font-semibold cursor-pointer"
+            >
+              Step 8: Structured JSON
+            </button>
+            <button
+              type="button"
+              id="modeRawBtn"
+              onclick="setFormatMode('raw')"
+              class="px-2.5 py-1 rounded font-mono text-xs bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer"
+            >
+              Step 7: Single String
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <!-- 1. ADDRESS -->
+          <div
+            onclick="switchInspectorTab('params')"
+            class="bg-white border border-slate-200 hover:border-slate-400 rounded-xl p-4 space-y-1 cursor-pointer transition-colors"
+          >
+            <div class="text-[11px] font-semibold text-slate-500">1. ADDRESS (URL)</div>
+            <div id="cardAddress" class="text-xs font-mono font-semibold text-slate-900 truncate">
+              /api/suggestions
+            </div>
+            <div class="text-[11px] text-slate-500">Where the request is sent</div>
+          </div>
+
+          <!-- 2. ACTION -->
+          <div
+            onclick="switchInspectorTab('params')"
+            class="bg-white border border-slate-200 hover:border-slate-400 rounded-xl p-4 space-y-1 cursor-pointer transition-colors"
+          >
+            <div class="text-[11px] font-semibold text-slate-500">2. ACTION (Method)</div>
+            <div class="text-xs font-mono font-semibold text-sky-700">POST</div>
+            <div class="text-[11px] text-slate-500">Send input to generate output</div>
+          </div>
+
+          <!-- 3. KEY -->
+          <div
+            onclick="switchInspectorTab('auth')"
+            class="bg-white border border-slate-200 hover:border-slate-400 rounded-xl p-4 space-y-1 cursor-pointer transition-colors"
+          >
+            <div class="text-[11px] font-semibold text-slate-500">3. KEY (Headers &amp; Auth)</div>
+            <div id="cardKey" class="text-xs font-mono font-semibold text-amber-700 truncate">
+              GROQ_API_KEY (Server)
+            </div>
+            <div class="text-[11px] text-slate-500">Click to inspect Headers &amp; Auth</div>
+          </div>
+
+          <!-- 4. PACKAGE -->
+          <div
+            onclick="switchInspectorTab('body')"
+            class="bg-white border border-slate-200 hover:border-slate-400 rounded-xl p-4 space-y-1 cursor-pointer transition-colors"
+          >
+            <div class="text-[11px] font-semibold text-slate-500">4. PACKAGE (Body)</div>
+            <div class="text-xs font-mono font-semibold text-slate-900 truncate">
+              { face_shape, hair_type... }
+            </div>
+            <div class="text-[11px] text-slate-500">Click to inspect JSON Body</div>
+          </div>
+
+          <!-- 5. REPLY -->
+          <div
+            id="cardReplyBox"
+            class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1 transition-colors"
+          >
+            <div class="text-[11px] font-semibold text-slate-500">5. REPLY (HTTP Status Code)</div>
+            <div id="cardReplyText" class="text-xs font-mono font-semibold text-slate-500">
+              ○ Awaiting Request
+            </div>
+            <div class="text-[11px] text-slate-500">200 OK · 400 Bad Input · 502 Error</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TWO-COLUMN MAIN GRID: LEFT (01. Consultation + 02. Recommendations) | RIGHT (Live API Wire Inspector) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- LEFT COLUMN (7 Cols) -->
+        <div class="lg:col-span-7 space-y-8">
+          <!-- 01. CLIENT CONSULTATION PARAMETERS -->
+          <section class="bg-white border border-slate-200 rounded-xl p-6 space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h2 class="text-xl font-semibold text-slate-900 font-display">
+                  01. Client Consultation Parameters
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">
+                  Choose parameters below and click <code class="font-mono text-slate-800">[FIND MY STYLE]</code> to execute the API call.
+                </p>
+              </div>
+              <span class="text-xs font-mono text-slate-500">4 Parameters</span>
+            </div>
+
+            <!-- Parameter 1: face_shape -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-semibold text-slate-800">
+                  1. Face Shape (<code class="font-mono text-sky-700">face_shape</code>)
+                </label>
+                <button
+                  type="button"
+                  onclick="selectParam('face_shape', '')"
+                  class="text-xs text-amber-700 hover:underline font-medium cursor-pointer"
+                >
+                  Clear to test HTTP 400
+                </button>
+              </div>
+              <div id="faceShapeGrid" class="grid grid-cols-3 sm:grid-cols-6 gap-2"></div>
+            </div>
+
+            <!-- Parameter 2: hair_type -->
+            <div class="space-y-2">
+              <label class="block text-xs font-semibold text-slate-800">
+                2. Hair Type (<code class="font-mono text-sky-700">hair_type</code>)
+              </label>
+              <div id="hairTypeGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+            </div>
+
+            <!-- Parameter 3: hair_length -->
+            <div class="space-y-2">
+              <label class="block text-xs font-semibold text-slate-800">
+                3. Hair Length (<code class="font-mono text-sky-700">hair_length</code>)
+              </label>
+              <div id="hairLengthGrid" class="grid grid-cols-3 gap-2"></div>
+            </div>
+
+            <!-- Parameter 4: style_preference -->
+            <div class="space-y-2">
+              <label class="block text-xs font-semibold text-slate-800">
+                4. Style Preference (<code class="font-mono text-sky-700">style_preference</code>)
+              </label>
+              <div id="stylePrefGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+            </div>
+
+            <!-- Primary CTA & Error Simulation Buttons -->
+            <div class="pt-3 border-t border-slate-100 space-y-3">
+              <button
+                type="button"
+                id="findStyleBtn"
+                onclick="runApiCall()"
+                class="w-full py-3.5 px-6 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <span>[FIND MY STYLE] — Send POST Request</span>
+              </button>
+
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <span class="text-xs text-slate-500">Test Edge Cases (Steps 10 &amp; 11):</span>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onclick="trigger400Test()"
+                    class="px-3 py-1.5 text-xs font-medium rounded-md border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 cursor-pointer"
+                  >
+                    Test 400 (Missing Input)
+                  </button>
+                  <button
+                    type="button"
+                    onclick="trigger502Test()"
+                    class="px-3 py-1.5 text-xs font-medium rounded-md border border-red-300 bg-red-50 text-red-900 hover:bg-red-100 cursor-pointer"
+                  >
+                    Test 502 (AI Failure)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 02. PERSONALIZED RECOMMENDATIONS (Hidden until API request is made!) -->
+          <section id="recommendationsSection" class="space-y-4">
+            <!-- Populated dynamically by JS only after API request -->
+          </section>
+        </div>
+
+        <!-- RIGHT COLUMN (5 Cols): LIVE API WIRE INSPECTOR (Parameters, Headers, Auth, Body & JSON Response) -->
+        <aside class="lg:col-span-5 lg:sticky lg:top-20">
+          <div class="bg-slate-900 text-slate-100 rounded-xl border border-slate-800 overflow-hidden">
+            <!-- Header -->
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono uppercase tracking-wider text-sky-400 font-semibold">
+                  Live API Wire Inspector
+                </span>
+              </div>
+              <span id="inspectorStatusPill" class="px-2.5 py-0.5 text-xs font-mono font-semibold rounded bg-slate-800 text-slate-400 border border-slate-700">
+                AWAITING CALL
+              </span>
+            </div>
+
+            <div class="p-5 space-y-5">
+              <!-- 4 Tabs: Parameters | Headers | Auth | Body -->
+              <div class="space-y-2.5">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                  <span>Inspect Request: Parameters, Headers, Auth &amp; Body</span>
+                  <button
+                    type="button"
+                    onclick="copyRequestBody()"
+                    id="copyReqBtn"
+                    class="text-xs font-mono text-sky-400 hover:text-sky-300 cursor-pointer"
+                  >
+                    Copy Body
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-4 gap-1 p-1 bg-slate-950 rounded-lg border border-slate-800 text-xs font-mono">
+                  <button
+                    type="button"
+                    id="tabBtn-params"
+                    onclick="switchInspectorTab('params')"
+                    class="py-1.5 px-2 rounded text-[11px] font-semibold transition-colors cursor-pointer text-slate-400 hover:text-white"
+                  >
+                    Parameters
+                  </button>
+                  <button
+                    type="button"
+                    id="tabBtn-headers"
+                    onclick="switchInspectorTab('headers')"
+                    class="py-1.5 px-2 rounded text-[11px] font-semibold transition-colors cursor-pointer text-slate-400 hover:text-white"
+                  >
+                    Headers
+                  </button>
+                  <button
+                    type="button"
+                    id="tabBtn-auth"
+                    onclick="switchInspectorTab('auth')"
+                    class="py-1.5 px-2 rounded text-[11px] font-semibold transition-colors cursor-pointer text-slate-400 hover:text-white"
+                  >
+                    Auth (Key)
+                  </button>
+                  <button
+                    type="button"
+                    id="tabBtn-body"
+                    onclick="switchInspectorTab('body')"
+                    class="py-1.5 px-2 rounded text-[11px] font-semibold transition-colors cursor-pointer bg-sky-700 text-white"
+                  >
+                    Body
+                  </button>
+                </div>
+
+                <!-- Dynamic Inspector Tab Content -->
+                <div id="inspectorTabContent" class="rounded-lg bg-slate-950 border border-slate-800 p-3.5 text-xs font-mono"></div>
+              </div>
+
+              <!-- 5. REPLY & JSON RESPONSE (Appears ONLY after making an API request) -->
+              <div class="space-y-2 pt-3 border-t border-slate-800">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                  <span>Server JSON Response (Reply)</span>
+                  <button
+                    type="button"
+                    id="copyResBtn"
+                    onclick="copyResponseJson()"
+                    class="hidden text-xs font-mono text-emerald-400 hover:text-emerald-300 cursor-pointer"
+                  >
+                    Copy JSON
+                  </button>
+                </div>
+
+                <div id="jsonResponseContainer">
+                  <!-- Starts in Awaiting API Request state -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <!-- ALL APPLICATION LOGIC IN ONE SELF-CONTAINED SCRIPT -->
+    <script>
+      // --- 1. STATE ---
+      const OPTIONS = {
+        face_shape: ["oval", "round", "square", "heart", "diamond", "oblong"],
+        hair_type: ["straight", "wavy", "curly", "coily"],
+        hair_length: ["short", "medium", "long"],
+        style_preference: [
+          "old money",
+          "modern minimalist",
+          "textured crop",
+          "classic gentleman",
+          "effortless flow",
+          "edgy editorial",
+        ],
+      };
+
+      let state = {
+        face_shape: "oval",
+        hair_type: "wavy",
+        hair_length: "medium",
+        style_preference: "old money",
+        response_mode: "structured", // 'structured' | 'raw'
+        simulate_502: false,
+        inspectorTab: "body", // 'params' | 'headers' | 'auth' | 'body'
+        groqApiKey: "",
+        showKeyPlain: false,
+        hasExecutedRequest: false,
+        isLoading: false,
+        lastStatus: null,
+        lastDurationMs: null,
+        lastResponseJson: null,
+        lastSuggestions: [],
+        lastRawString: "",
+        lastError: null,
+      };
+
+      // --- 2. INITIALIZATION ---
+      function init() {
+        renderOptionGrids();
+        renderInspectorTab();
+        renderRecommendationsSection();
+        renderJsonResponseSection();
+
+        // Check if server already has a key configured (when running with node server)
+        fetch("/api/config/groq-key")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => {
+            if (data && data.configured && data.masked_key) {
+              document.getElementById("keyStatusText").textContent =
+                "● Server Key Active: " + data.masked_key;
+              document.getElementById("keyStatusText").className =
+                "text-xs font-mono text-emerald-700 font-semibold whitespace-nowrap";
+            }
+          })
+          .catch(() => {});
+      }
+
+      // --- 3. RENDER CONSULTATION BUTTON GRIDS ---
+      function renderOptionGrids() {
+        const makeButtons = (containerId, field, items) => {
+          const el = document.getElementById(containerId);
+          el.innerHTML = items
+            .map((val) => {
+              const active = state[field] === val;
+              return `<button
+                type="button"
+                onclick="selectParam('${field}', '${val}')"
+                class="px-3 py-2 rounded-lg border text-xs font-medium capitalize transition-colors cursor-pointer ${
+                  active
+                    ? "bg-slate-900 border-slate-900 text-white font-semibold"
+                    : "bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100"
+                }"
+              >${val}</button>`;
+            })
+            .join("");
+        };
+
+        makeButtons("faceShapeGrid", "face_shape", OPTIONS.face_shape);
+        makeButtons("hairTypeGrid", "hair_type", OPTIONS.hair_type);
+        makeButtons("hairLengthGrid", "hair_length", OPTIONS.hair_length);
+        makeButtons("stylePrefGrid", "style_preference", OPTIONS.style_preference);
+      }
+
+      function selectParam(field, value) {
+        state[field] = value;
+        state.simulate_502 = false;
+        renderOptionGrids();
+        renderInspectorTab();
+      }
+
+      function setFormatMode(mode) {
+        state.response_mode = mode;
+        const sBtn = document.getElementById("modeStructuredBtn");
+        const rBtn = document.getElementById("modeRawBtn");
+        if (mode === "structured") {
+          sBtn.className =
+            "px-2.5 py-1 rounded font-mono text-xs bg-slate-900 text-white font-semibold cursor-pointer";
+          rBtn.className =
+            "px-2.5 py-1 rounded font-mono text-xs bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer";
+        } else {
+          rBtn.className =
+            "px-2.5 py-1 rounded font-mono text-xs bg-slate-900 text-white font-semibold cursor-pointer";
+          sBtn.className =
+            "px-2.5 py-1 rounded font-mono text-xs bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer";
+        }
+        renderInspectorTab();
+        if (state.hasExecutedRequest) {
+          runApiCall();
+        }
+      }
+
+      // --- 4. MANUAL GROQ API KEY MANAGEMENT ---
+      function handleKeyInputChange() {
+        const val = document.getElementById("groqKeyInput").value.trim();
+        state.groqApiKey = val;
+      }
+
+      function toggleKeyVisibility() {
+        state.showKeyPlain = !state.showKeyPlain;
+        const input = document.getElementById("groqKeyInput");
+        const btn = document.getElementById("toggleKeyBtn");
+        input.type = state.showKeyPlain ? "text" : "password";
+        btn.textContent = state.showKeyPlain ? "Hide" : "Show";
+      }
+
+      function maskKey(k) {
+        if (!k) return "None";
+        if (k.length <= 10) return "gsk_••••";
+        return k.slice(0, 6) + "••••••••" + k.slice(-4);
+      }
+
+      async function saveGroqKey() {
+        const val = document.getElementById("groqKeyInput").value.trim();
+        state.groqApiKey = val;
+        const statusEl = document.getElementById("keyStatusText");
+        const cardKeyEl = document.getElementById("cardKey");
+
+        // Also send to local backend if running under server.ts
+        try {
+          await fetch("/api/config/groq-key", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ api_key: val }),
+          });
+        } catch (_) {}
+
+        if (val) {
+          statusEl.textContent = "● Saved Key: " + maskKey(val);
+          statusEl.className = "text-xs font-mono text-emerald-700 font-semibold whitespace-nowrap";
+          cardKeyEl.textContent = "Bearer " + maskKey(val);
+        } else {
+          statusEl.textContent = "No custom key (Using Server Default)";
+          statusEl.className = "text-xs font-mono text-slate-500 whitespace-nowrap";
+          cardKeyEl.textContent = "GROQ_API_KEY (Server)";
+        }
+        renderInspectorTab();
+      }
+
+      async function clearGroqKey() {
+        document.getElementById("groqKeyInput").value = "";
+        state.groqApiKey = "";
+        await saveGroqKey();
+      }
+
+      // --- 5. INSPECTOR TABS (PARAMETERS | HEADERS | AUTH | BODY) ---
+      function switchInspectorTab(tab) {
+        state.inspectorTab = tab;
+        ["params", "headers", "auth", "body"].forEach((t) => {
+          const btn = document.getElementById("tabBtn-" + t);
+          if (t === tab) {
+            btn.className =
+              "py-1.5 px-2 rounded text-[11px] font-semibold transition-colors cursor-pointer bg-sky-700 text-white";
+          } else {
+            btn.className =
+              "py-1.5 px-2 rounded text-[11px] font-semibold transition-colors cursor-pointer text-slate-400 hover:text-white";
+          }
+        });
+        renderInspectorTab();
+      }
+
+      function getCurrentRequestBody() {
+        return {
+          face_shape: state.face_shape,
+          hair_type: state.hair_type,
+          hair_length: state.hair_length,
+          style_preference: state.style_preference,
+        };
+      }
+
+      function renderInspectorTab() {
+        const container = document.getElementById("inspectorTabContent");
+        const tab = state.inspectorTab;
+        const masked = state.groqApiKey ? maskKey(state.groqApiKey) : "gsk_••••••••••••";
+
+        if (tab === "params") {
+          container.innerHTML = `
+            <div class="space-y-2">
+              <div class="text-slate-400 text-[11px] border-b border-slate-800 pb-1.5 flex justify-between">
+                <span>Parameter Key</span>
+                <span>Current Value &amp; Rule</span>
+              </div>
+              <div class="space-y-1.5">
+                <div class="flex justify-between">
+                  <span class="text-sky-300">face_shape</span>
+                  <span class="text-slate-200">${
+                    state.face_shape
+                      ? `"${state.face_shape}" (Required)`
+                      : '<span class="text-amber-400">"" (Missing → 400)</span>'
+                  }</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sky-300">hair_type</span>
+                  <span class="text-slate-200">"${state.hair_type}" (Required)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sky-300">hair_length</span>
+                  <span class="text-slate-200">"${state.hair_length}" (Required)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sky-300">style_preference</span>
+                  <span class="text-slate-200">"${state.style_preference}" (Optional)</span>
+                </div>
+              </div>
+            </div>
+          `;
+        } else if (tab === "headers") {
+          container.innerHTML = `
+            <div class="space-y-3">
+              <div>
+                <div class="text-[11px] text-sky-300 font-semibold mb-1">1. UI → API Request Headers</div>
+                <div class="p-2 rounded bg-slate-900 border border-slate-800 space-y-1">
+                  <div class="flex justify-between"><span class="text-slate-400">Content-Type:</span><span class="text-slate-200">application/json</span></div>
+                  <div class="flex justify-between"><span class="text-slate-400">Accept:</span><span class="text-slate-200">application/json</span></div>
+                </div>
+              </div>
+              <div>
+                <div class="text-[11px] text-amber-300 font-semibold mb-1">2. API → Groq Request Headers</div>
+                <div class="p-2 rounded bg-slate-900 border border-slate-800 space-y-1">
+                  <div class="flex justify-between"><span class="text-slate-400">Content-Type:</span><span class="text-slate-200">application/json</span></div>
+                  <div class="flex justify-between"><span class="text-slate-400">Authorization:</span><span class="text-amber-300">Bearer ${masked}</span></div>
+                </div>
+              </div>
+            </div>
+          `;
+        } else if (tab === "auth") {
+          container.innerHTML = `
+            <div class="space-y-2.5 font-sans">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                <span class="font-semibold text-emerald-400">● Bearer Token (GROQ_API_KEY)</span>
+                <span class="font-mono text-amber-300">${masked}</span>
+              </div>
+              <p class="text-slate-300 leading-relaxed">
+                <strong class="text-white">Active Key:</strong> ${
+                  state.groqApiKey
+                    ? `Using your manually pasted key (<code class="font-mono text-amber-300">${masked}</code>).`
+                    : `Using server environment key (<code class="font-mono text-emerald-300">process.env.GROQ_API_KEY</code>). Paste your own <code class="font-mono">gsk_...</code> key in the top bar at any time.`
+                }
+              </p>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `<pre class="text-sky-200 overflow-x-auto leading-relaxed">${JSON.stringify(
+            getCurrentRequestBody(),
+            null,
+            2
+          )}</pre>`;
+        }
+      }
+
+      // --- 6. RENDER 02. PERSONALIZED RECOMMENDATIONS & JSON RESPONSE (POST-REQUEST ONLY) ---
+      function renderRecommendationsSection() {
+        const container = document.getElementById("recommendationsSection");
+
+        // Before first request: show clean Awaiting Request placeholder
+        if (!state.hasExecutedRequest) {
+          container.innerHTML = `
+            <div class="bg-white border border-dashed border-slate-300 rounded-xl p-8 text-center space-y-2">
+              <div class="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                02. Personalized Recommendations — Awaiting API Request
+              </div>
+              <h3 class="text-lg font-semibold text-slate-900 font-display">
+                No recommendations generated yet
+              </h3>
+              <p class="text-xs text-slate-600 max-w-md mx-auto">
+                Click <code class="font-mono text-slate-900 font-semibold">[FIND MY STYLE]</code> above to send the <code class="font-mono text-slate-900">POST</code> request and render personalized hairstyles + JSON response.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        // Loading state
+        if (state.isLoading) {
+          container.innerHTML = `
+            <div class="bg-white border border-slate-200 rounded-xl p-8 text-center space-y-2 animate-pulse">
+              <div class="text-xs font-mono text-sky-700 font-semibold">
+                Executing POST /api/suggestions → Groq...
+              </div>
+              <div class="text-sm text-slate-600">Generating 3 tailored hairstyle recommendations...</div>
+            </div>
+          `;
+          return;
+        }
+
+        // Error state (400 or 502)
+        if (state.lastStatus !== 200) {
+          const is400 = state.lastStatus === 400;
+          container.innerHTML = `
+            <div class="rounded-xl p-6 border ${
+              is400 ? "bg-amber-50 border-amber-300 text-amber-950" : "bg-red-50 border-red-300 text-red-950"
+            } space-y-2">
+              <div class="text-xs font-mono font-semibold uppercase">
+                ${is400 ? "▲ HTTP 400 Bad Request (Step 10 Validation)" : "■ HTTP 502 Bad Gateway (Step 11 Error Handling)"}
+              </div>
+              <div class="text-base font-semibold font-display">${state.lastError || "Request Failed"}</div>
+              <p class="text-xs opacity-90">
+                Inspect the Server JSON Response on the right to see the exact error payload returned by the API.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        // 200 OK: Raw String Mode (Step 7) vs Structured JSON Cards (Step 8)
+        if (state.response_mode === "raw") {
+          container.innerHTML = `
+            <div class="bg-white border border-slate-200 rounded-xl p-6 space-y-3">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-slate-900 font-display">
+                  02. Personalized Recommendations (Step 7 Raw String)
+                </h2>
+                <span class="text-xs font-mono text-emerald-700 font-semibold">● 200 OK</span>
+              </div>
+              <pre class="p-4 rounded-lg bg-slate-900 text-slate-100 text-xs font-mono whitespace-pre-wrap leading-relaxed">${escapeHtml(
+                state.lastRawString
+              )}</pre>
+            </div>
+          `;
+          return;
+        }
+
+        // 200 OK: Structured Cards (Step 8)
+        const cardsHtml = state.lastSuggestions
+          .map(
+            (item, idx) => `
+            <article class="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between space-y-3 shadow-2xs">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-mono text-slate-400">#0${idx + 1}</span>
+                  <span class="px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono font-semibold">
+                    ${item.match_score}/100 Match
+                  </span>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-900 font-display">${escapeHtml(
+                  item.name
+                )}</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(item.reason)}</p>
+              </div>
+              ${
+                item.styling_tip
+                  ? `<div class="pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+                      <strong class="text-slate-700">Styling Tip:</strong> ${escapeHtml(item.styling_tip)}
+                    </div>`
+                  : ""
+              }
+            </article>
+          `
+          )
+          .join("");
+
+        container.innerHTML = `
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-semibold text-slate-900 font-display">
+                  02. Personalized Recommendations
+                </h2>
+                <p class="text-xs text-slate-500">
+                  Rendered from <code class="font-mono text-slate-800">data.suggestions</code> returned by the API
+                </p>
+              </div>
+              <span class="text-xs font-mono text-emerald-700 font-semibold">
+                ● 200 OK (${state.lastDurationMs}ms)
+              </span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              ${cardsHtml}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderJsonResponseSection() {
+        const container = document.getElementById("jsonResponseContainer");
+        const copyBtn = document.getElementById("copyResBtn");
+
+        if (!state.hasExecutedRequest) {
+          copyBtn.classList.add("hidden");
+          container.innerHTML = `
+            <div class="p-5 rounded-lg bg-slate-950 border border-dashed border-slate-800 text-center space-y-1">
+              <div class="text-xs font-mono text-slate-400">No JSON response yet</div>
+              <p class="text-[11px] text-slate-500">
+                Click <code class="font-mono text-slate-300">[FIND MY STYLE]</code> to execute the API request and inspect the JSON response here.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        copyBtn.classList.remove("hidden");
+        const statusColor =
+          state.lastStatus === 200
+            ? "text-emerald-300"
+            : state.lastStatus === 400
+            ? "text-amber-300"
+            : "text-red-300";
+
+        container.innerHTML = `<pre class="p-3.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono ${statusColor} max-h-80 overflow-y-auto leading-relaxed">${escapeHtml(
+          JSON.stringify(state.lastResponseJson, null, 2)
+        )}</pre>`;
+      }
+
+      // --- 7. EXECUTE API CALL (WORKS BOTH VIA SERVER /api/suggestions AND STANDALONE DIRECT GROQ) ---
+      async function runApiCall() {
+        state.isLoading = true;
+        state.lastError = null;
+        renderRecommendationsSection();
+
+        const btn = document.getElementById("findStyleBtn");
+        btn.textContent = "Calling API → Groq...";
+        btn.disabled = true;
+
+        const startTime = performance.now();
+        const keyFromInput = document.getElementById("groqKeyInput").value.trim();
+        if (keyFromInput) {
+          state.groqApiKey = keyFromInput;
+        }
+
+        try {
+          let status = 200;
+          let responseData = null;
+
+          // Step 10: Client/Server Validation check (400 Bad Request)
+          if (
+            !state.face_shape ||
+            !state.hair_type ||
+            !state.hair_length ||
+            state.face_shape.trim() === ""
+          ) {
+            status = 400;
+            responseData = {
+              error: "Missing required hairstyle information",
+              missing_fields: ["face_shape"],
+            };
+          } else if (state.simulate_502) {
+            // Step 11: Simulated 502 Bad Gateway
+            status = 502;
+            responseData = {
+              error: "Unable to generate hairstyle recommendations",
+            };
+          } else {
+            // Try calling backend /api/suggestions first (if hosted on server.ts),
+            // OR call Groq directly if user pasted a gsk_... key in standalone file mode!
+            let handledByBackend = false;
+
+            try {
+              if (window.location.protocol !== "file:") {
+                if (state.groqApiKey) {
+                  await fetch("/api/config/groq-key", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ api_key: state.groqApiKey }),
+                  });
+                }
+                const res = await fetch("/api/suggestions", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    face_shape: state.face_shape,
+                    hair_type: state.hair_type,
+                    hair_length: state.hair_length,
+                    style_preference: state.style_preference,
+                    response_mode: state.response_mode,
+                    simulate_502: state.simulate_502,
+                  }),
+                });
+                status = res.status;
+                responseData = await res.json();
+                if (responseData && responseData._meta) {
+                  delete responseData._meta;
+                }
+                handledByBackend = true;
+              }
+            } catch (_) {
+              handledByBackend = false;
+            }
+
+            // If opened as a local standalone index.html file (without server.ts), call Groq directly using pasted key!
+            if (!handledByBackend) {
+              if (!state.groqApiKey) {
+                status = 502;
+                responseData = {
+                  error:
+                    "Standalone file mode: Please paste your Groq API Key (gsk_...) in the top bar first!",
+                };
+              } else {
+                const prompt = `Recommend 3 hairstyles for:
+Face shape: ${state.face_shape}
+Hair type: ${state.hair_type}
+Hair length: ${state.hair_length}
+Style preference: ${state.style_preference}
+
+Return valid JSON with exact structure:
+{ "suggestions": [{ "name": "...", "match_score": 94, "reason": "...", "styling_tip": "..." }] }`;
+
+                let groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + state.groqApiKey,
+                  },
+                  body: JSON.stringify({
+                    model: "openai/gpt-oss-20b",
+                    messages: [
+                      {
+                        role: "system",
+                        content:
+                          "You are a professional hairstylist. Respond strictly with valid JSON.",
+                      },
+                      { role: "user", content: prompt },
+                    ],
+                    response_format: { type: "json_object" },
+                  }),
+                });
+
+                if (!groqRes.ok) {
+                  // Fallback to llama-3.3-70b-versatile
+                  groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: "Bearer " + state.groqApiKey,
+                    },
+                    body: JSON.stringify({
+                      model: "llama-3.3-70b-versatile",
+                      messages: [
+                        {
+                          role: "system",
+                          content:
+                            "You are a professional hairstylist. Respond strictly with valid JSON.",
+                        },
+                        { role: "user", content: prompt },
+                      ],
+                      response_format: { type: "json_object" },
+                    }),
+                  });
+                }
+
+                if (!groqRes.ok) {
+                  status = 502;
+                  responseData = {
+                    error: "Unable to generate hairstyle recommendations (Check GROQ_API_KEY)",
+                  };
+                } else {
+                  const groqData = await groqRes.json();
+                  const parsed = JSON.parse(
+                    groqData.choices?.[0]?.message?.content || '{"suggestions":[]}'
+                  );
+                  const suggestions = parsed.suggestions || [];
+                  const rawStr = suggestions
+                    .map(
+                      (s, i) =>
+                        `${i + 1}. ${s.name} — ${s.match_score}/100\nReason: ${s.reason}`
+                    )
+                    .join("\n\n");
+
+                  status = 200;
+                  responseData =
+                    state.response_mode === "raw"
+                      ? { result: rawStr }
+                      : { suggestions, result: rawStr };
+                }
+              }
+            }
+          }
+
+          const elapsed = Math.round(performance.now() - startTime);
+          state.hasExecutedRequest = true;
+          state.lastStatus = status;
+          state.lastDurationMs = elapsed;
+
+          if (status === 200) {
+            state.lastSuggestions = responseData.suggestions || [];
+            state.lastRawString =
+              responseData.result ||
+              state.lastSuggestions
+                .map((s, i) => `${i + 1}. ${s.name} — ${s.match_score}/100\n${s.reason}`)
+                .join("\n\n");
+            state.lastResponseJson =
+              state.response_mode === "raw"
+                ? { result: state.lastRawString }
+                : { suggestions: state.lastSuggestions };
+          } else {
+            state.lastError = responseData.error || "API Error";
+            state.lastResponseJson = responseData;
+          }
+
+          updateStatusUI(status, elapsed);
+        } catch (err) {
+          state.hasExecutedRequest = true;
+          state.lastStatus = 502;
+          state.lastDurationMs = Math.round(performance.now() - startTime);
+          state.lastError = "Unable to generate hairstyle recommendations";
+          state.lastResponseJson = { error: state.lastError };
+          updateStatusUI(502, state.lastDurationMs);
+        } finally {
+          state.isLoading = false;
+          btn.textContent = "[FIND MY STYLE] — Send POST Request";
+          btn.disabled = false;
+          renderRecommendationsSection();
+          renderJsonResponseSection();
+        }
+      }
+
+      function updateStatusUI(status, elapsed) {
+        const topBadge = document.getElementById("topStatusBadge");
+        const topLatency = document.getElementById("topLatency");
+        const replyBox = document.getElementById("cardReplyBox");
+        const replyText = document.getElementById("cardReplyText");
+        const pill = document.getElementById("inspectorStatusPill");
+
+        topLatency.textContent = `Latency: ${elapsed}ms`;
+
+        if (status === 200) {
+          topBadge.textContent = "Reply: ● 200 OK";
+          topBadge.className = "text-emerald-700 font-semibold";
+          replyBox.className =
+            "bg-emerald-50 border border-emerald-300 rounded-xl p-4 space-y-1 transition-colors";
+          replyText.textContent = `● 200 OK (${elapsed}ms)`;
+          replyText.className = "text-xs font-mono font-semibold text-emerald-800";
+          pill.textContent = "200 OK";
+          pill.className =
+            "px-2.5 py-0.5 text-xs font-mono font-semibold rounded bg-emerald-950 text-emerald-300 border border-emerald-700";
+        } else if (status === 400) {
+          topBadge.textContent = "Reply: ▲ 400 BAD REQUEST";
+          topBadge.className = "text-amber-700 font-semibold";
+          replyBox.className =
+            "bg-amber-50 border border-amber-300 rounded-xl p-4 space-y-1 transition-colors";
+          replyText.textContent = "▲ 400 Bad Request";
+          replyText.className = "text-xs font-mono font-semibold text-amber-800";
+          pill.textContent = "400 BAD REQUEST";
+          pill.className =
+            "px-2.5 py-0.5 text-xs font-mono font-semibold rounded bg-amber-950 text-amber-300 border border-amber-700";
+        } else {
+          topBadge.textContent = "Reply: ■ 502 BAD GATEWAY";
+          topBadge.className = "text-red-700 font-semibold";
+          replyBox.className =
+            "bg-red-50 border border-red-300 rounded-xl p-4 space-y-1 transition-colors";
+          replyText.textContent = "■ 502 Bad Gateway";
+          replyText.className = "text-xs font-mono font-semibold text-red-800";
+          pill.textContent = "502 BAD GATEWAY";
+          pill.className =
+            "px-2.5 py-0.5 text-xs font-mono font-semibold rounded bg-red-950 text-red-300 border border-red-700";
+        }
+      }
+
+      function trigger400Test() {
+        state.face_shape = "";
+        state.simulate_502 = false;
+        renderOptionGrids();
+        renderInspectorTab();
+        runApiCall();
+      }
+
+      function trigger502Test() {
+        if (!state.face_shape) state.face_shape = "oval";
+        state.simulate_502 = true;
+        renderOptionGrids();
+        renderInspectorTab();
+        runApiCall();
+      }
+
+      function resetDemo() {
+        state.face_shape = "oval";
+        state.hair_type = "wavy";
+        state.hair_length = "medium";
+        state.style_preference = "old money";
+        state.simulate_502 = false;
+        state.hasExecutedRequest = false;
+        state.lastStatus = null;
+        state.lastDurationMs = null;
+        state.lastResponseJson = null;
+        state.lastSuggestions = [];
+        state.lastRawString = "";
+
+        document.getElementById("topStatusBadge").textContent = "Reply: ○ AWAITING REQUEST";
+        document.getElementById("topStatusBadge").className = "text-slate-500 font-semibold";
+        document.getElementById("topLatency").textContent = "Latency: —";
+        document.getElementById("cardReplyBox").className =
+          "bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1 transition-colors";
+        document.getElementById("cardReplyText").textContent = "○ Awaiting Request";
+        document.getElementById("cardReplyText").className =
+          "text-xs font-mono font-semibold text-slate-500";
+        document.getElementById("inspectorStatusPill").textContent = "AWAITING CALL";
+        document.getElementById("inspectorStatusPill").className =
+          "px-2.5 py-0.5 text-xs font-mono font-semibold rounded bg-slate-800 text-slate-400 border border-slate-700";
+
+        renderOptionGrids();
+        renderInspectorTab();
+        renderRecommendationsSection();
+        renderJsonResponseSection();
+      }
+
+      function copyRequestBody() {
+        navigator.clipboard.writeText(JSON.stringify(getCurrentRequestBody(), null, 2));
+        const btn = document.getElementById("copyReqBtn");
+        btn.textContent = "✓ Copied";
+        setTimeout(() => (btn.textContent = "Copy Body"), 1500);
+      }
+
+      function copyResponseJson() {
+        if (!state.lastResponseJson) return;
+        navigator.clipboard.writeText(JSON.stringify(state.lastResponseJson, null, 2));
+        const btn = document.getElementById("copyResBtn");
+        btn.textContent = "✓ Copied";
+        setTimeout(() => (btn.textContent = "Copy JSON"), 1500);
+      }
+
+      // Download this entire self-contained index.html file with 1 click
+      function downloadSingleHtmlFile() {
+        const htmlContent = "<!doctype html>\n" + document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "index.html";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function escapeHtml(str) {
+        return String(str || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      init();
+    </script>
+  </body>
+</html>

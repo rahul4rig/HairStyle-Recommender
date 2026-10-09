@@ -1,0 +1,6 @@
+{
+  "name": "Hairstyle AI Studio & API Lab",
+  "description": "Interactive hairstyle recommendation engine and 30-minute hands-on workshop demonstrating secure server-side AI API architecture (Hairstyle UI -> API -> Groq -> UI).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
